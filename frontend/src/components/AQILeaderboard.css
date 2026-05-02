@@ -1,0 +1,354 @@
+.aqi-leaderboard {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  padding-bottom: 80px;
+}
+
+.animate-fade-in {
+  animation: fadeIn 1s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.token-alert {
+  background: rgba(251, 146, 60, 0.1);
+  border: 1px solid rgba(251, 146, 60, 0.2);
+  color: #fb923c;
+  padding: 16px 24px;
+  border-radius: 16px;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.token-alert a {
+  color: #fff;
+  text-decoration: underline;
+  font-weight: 700;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(15px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Summary Bar — Sophisticated & Clean */
+.aqi-summary-bar {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(25px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  padding: 32px;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 40px;
+}
+
+.summary-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.summary-item .label {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 2.5px;
+  font-weight: 500;
+  opacity: 0.6;
+}
+
+.summary-item .value {
+  font-family: var(--font-heading);
+  font-size: 1.6rem;
+  font-weight: 900;
+  letter-spacing: -0.5px;
+}
+
+.value.success { color: #4ade80; }
+.value.danger { color: #f87171; }
+.value.warning { color: #fb923c; }
+
+/* Table Section */
+.aqi-table-container {
+  background: transparent;
+  border-radius: 0;
+  padding: 0;
+}
+
+.aqi-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 12px; /* Add gap between rows */
+  text-align: left;
+}
+
+.aqi-table th {
+  padding: 0 24px 12px;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--text-secondary);
+  opacity: 0.4;
+  font-weight: 600;
+}
+
+.city-row {
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  transition: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+  position: relative;
+}
+
+.city-row:hover {
+  background: rgba(255, 255, 255, 0.06);
+  transform: scale(1.005);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.city-row.expanded {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.aqi-table td {
+  padding: 24px;
+}
+
+.rank-cell {
+  font-family: var(--font-heading);
+  font-weight: 900;
+  font-size: 1.2rem;
+  opacity: 0.3;
+  width: 80px;
+}
+
+.city-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.city-name-aqi {
+  font-family: var(--font-heading);
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+}
+
+.update-time {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  opacity: 0.5;
+}
+
+.aqi-score-box {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.aqi-val {
+  font-family: var(--font-heading);
+  font-size: 2.4rem;
+  font-weight: 900;
+  line-height: 1;
+  width: 60px;
+}
+
+.aqi-mini-bar {
+  flex: 1;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 1px;
+  max-width: 100px;
+}
+
+.aqi-bar-fill {
+  height: 100%;
+}
+
+.cat-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cat-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  box-shadow: 0 0 10px currentColor;
+}
+
+.cat-label-text {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.pollutant-badge {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 6px 12px;
+  border-radius: 100px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.trend-cell {
+  font-size: 1.2rem;
+  opacity: 0.6;
+}
+
+/* Expanded Row — Sleek & Integrated */
+.expansion-row td {
+  padding: 0 24px 24px !important;
+}
+
+.expanded-content {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 0 0 20px 20px;
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  margin-top: -12px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-top: none;
+}
+
+.pollutant-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 20px;
+}
+
+.pollutant-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.p-label {
+  font-size: 0.65rem;
+  color: var(--text-secondary);
+  opacity: 0.5;
+  text-transform: uppercase;
+}
+
+.p-value {
+  font-family: var(--font-heading);
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.p-value .unit {
+  font-size: 0.65rem;
+  opacity: 0.4;
+}
+
+.health-rec h4 {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-bottom: 12px;
+  color: var(--text-secondary);
+  opacity: 0.6;
+}
+
+.health-rec p {
+  font-size: 1.1rem;
+  line-height: 1.5;
+  font-weight: 400;
+}
+
+.action-row {
+  display: flex;
+  gap: 16px;
+}
+
+.action-btn {
+  padding: 12px 24px;
+  border-radius: 100px;
+  font-weight: 600;
+  font-size: 0.8rem;
+  transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.map-btn { background: rgba(255, 255, 255, 0.05); color: white; border: 1px solid rgba(255, 255, 255, 0.1); }
+.main-btn { background: var(--text-primary); color: #000; }
+.remove-btn { background: transparent; color: #f87171; opacity: 0.6; }
+
+.action-btn:hover {
+  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.main-btn:hover { background: #fff; }
+
+/* Add City Section */
+.add-city-section {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.add-city-form {
+  display: flex;
+  background: rgba(255, 255, 255, 0.03);
+  padding: 6px;
+  border-radius: 100px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  position: relative;
+}
+
+.input-wrapper-aqi {
+  flex: 1;
+  position: relative;
+}
+
+.add-city-form input {
+  width: 100%;
+  background: transparent;
+  padding: 12px 24px;
+  color: white;
+  font-size: 0.95rem;
+}
+
+.aqi-dropdown {
+  position: absolute;
+  top: calc(100% + 20px) !important;
+  left: -6px;
+  right: -6px;
+  width: auto !important;
+  background: rgba(20, 18, 16, 0.98) !important;
+  border-radius: 20px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+}
+
+.add-city-form button {
+  background: rgba(255, 255, 255, 0.08);
+  color: white;
+  padding: 0 24px;
+  border-radius: 100px;
+  font-weight: 600;
+  transition: 0.3s;
+}
+
+.add-city-form button:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+@media (max-width: 900px) {
+  .pollutant-grid { grid-template-columns: repeat(3, 1fr); }
+  .summary-grid { grid-template-columns: repeat(2, 1fr); }
+}

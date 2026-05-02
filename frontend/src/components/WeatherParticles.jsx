@@ -27,15 +27,26 @@ export default function WeatherParticles({ theme }) {
   // Generate snowflakes with randomized positions, sizes, and drift speeds
   const snowflakes = useMemo(() => {
     if (theme !== 'snow') return null;
-    const flakes = ['*', '+', '·', '•', '×'];
-    return Array.from({ length: 40 }, (_, i) => ({
+    const flakes = ['*', '+', '·', '•', '×', '❄', '❅', '❆'];
+    return Array.from({ length: 80 }, (_, i) => ({
       id: i,
       left: `${Math.random() * 100}%`,
       char: flakes[Math.floor(Math.random() * flakes.length)],
-      size: `${0.6 + Math.random() * 1}rem`,
-      duration: `${4 + Math.random() * 6}s`,
+      size: `${0.8 + Math.random() * 1.5}rem`,
+      duration: `${4 + Math.random() * 8}s`,
       delay: `${Math.random() * 5}s`,
-      opacity: 0.4 + Math.random() * 0.5,
+      opacity: 0.6 + Math.random() * 0.4,
+    }));
+  }, [theme]);
+
+  // Generate frost particles for chilly theme
+  const frostParticles = useMemo(() => {
+    if (theme !== 'chilly') return null;
+    return Array.from({ length: 100 }, (_, i) => ({
+      id: i,
+      left: `${Math.random() * 100}%`,
+      duration: `${10 + Math.random() * 15}s`,
+      delay: `${Math.random() * 10}s`,
     }));
   }, [theme]);
 
@@ -74,6 +85,19 @@ export default function WeatherParticles({ theme }) {
         >
           {flake.char}
         </span>
+      ))}
+
+      {/* Frost Particles */}
+      {frostParticles && frostParticles.map(frost => (
+        <div
+          key={frost.id}
+          className="frost-particle"
+          style={{
+            left: frost.left,
+            animationDuration: frost.duration,
+            animationDelay: frost.delay,
+          }}
+        />
       ))}
     </div>
   );

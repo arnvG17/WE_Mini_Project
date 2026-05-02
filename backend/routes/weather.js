@@ -305,4 +305,18 @@ router.get('/current/:city', async (req, res) => {
   }
 });
 
+// --------------- GET /search/:query ---------------
+router.get('/search/:query', async (req, res) => {
+  try {
+    const { query } = req.params;
+    const { data } = await axios.get(`${BASE_URL}/search.json`, {
+      params: { key: API_KEY, q: query }
+    });
+    res.json(data);
+  } catch (err) {
+    console.error('Search API error:', err.message);
+    res.status(500).json({ error: "internal_server_error" });
+  }
+});
+
 module.exports = router;

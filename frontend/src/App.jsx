@@ -8,6 +8,8 @@ import RecentSearches from './components/RecentSearches';
 import WeatherDashboard from './components/WeatherDashboard';
 import WeatherParticles from './components/WeatherParticles';
 import ExploreCities from './components/ExploreCities';
+import VisualizeTab from './components/VisualizeTab';
+import AQILeaderboard from './components/AQILeaderboard';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 const RECENT_KEY = 'weathervue_recent';
@@ -26,6 +28,11 @@ function App() {
   const [city, setCity] = useState('');
   const [recentSearches, setRecentSearches] = useState([]);
   const [view, setView] = useState('dashboard');
+  const [hasOpenedVisualize, setHasOpenedVisualize] = useState(false);
+
+  useEffect(() => {
+    if (view === 'visualize') setHasOpenedVisualize(true);
+  }, [view]);
 
   useEffect(() => {
     try {
@@ -47,7 +54,13 @@ function App() {
     setLoading(true);
     setError('');
     setCity(cityName);
-    setView('dashboard');
+    // If we are in visualize view, don't switch back to dashboard automatically
+    // but the user might want to see the update in the current view.
+    // However, the original code had setView('dashboard').
+    // I'll keep it as dashboard unless the user is already on visualize.
+    if (view !== 'visualize') {
+      setView('dashboard');
+    }
 
     try {
       const res = await axios.get(`${API_BASE}/dashboard/${encodeURIComponent(cityName)}`);
@@ -63,7 +76,7 @@ function App() {
       setTheme('');
     }
     setLoading(false);
-  }, [saveRecent]);
+  }, [saveRecent, view]);
 
   // Force theme on body for bulletproof backgrounds
   useEffect(() => {
@@ -93,6 +106,17 @@ function App() {
     );
   };
 
+  const handleSetMainCity = (cityName) => {
+    fetchWeather(cityName);
+    setView('dashboard');
+  };
+
+  const handleViewOnMap = async (aqiCityData) => {
+    // First fetch weather to populate weatherData which Cesium uses
+    await fetchWeather(aqiCityData.searchName);
+    setView('visualize');
+  };
+
   return (
     <div className={`app ${theme ? `theme-${theme}` : ''}`}>
       <WeatherParticles theme={theme} />
@@ -102,13 +126,18 @@ function App() {
           <div className="view-toggle">
             <button className={view === 'dashboard' ? 'active' : ''} onClick={() => setView('dashboard')}>Dashboard</button>
             <button className={view === 'explore' ? 'active' : ''} onClick={() => setView('explore')}>Explore</button>
+            <button className={view === 'leaderboard' ? 'active' : ''} onClick={() => setView('leaderboard')}>
+              Leaderboard
+            </button>
+            <button className={view === 'visualize' ? 'active' : ''} onClick={() => setView('visualize')}>Visualize</button>
           </div>
           <h1>{view === 'dashboard' && weatherData ? weatherData.location.name : 'WeatherVue'}</h1>
         </header>
 
         <SearchBar onSearch={fetchWeather} onGeolocate={handleGeolocate} loading={loading} />
 
-        {view === 'dashboard' ? (
+        {/* Dashboard View */}
+        {view === 'dashboard' && (
           <>
             <div className="toggle-row">
               <UnitToggle unit={unit} onToggle={setUnit} />
@@ -133,13 +162,35 @@ function App() {
 
             {!loading && !weatherData && !error && (
               <div className="empty-state">
-                <svg style={{ opacity: 0.15 }} width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                <svg style={{ opacity: 0.15 }} width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3(15.3) 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
                 <p>Search a city to begin your journey</p>
               </div>
             )}
           </>
-        ) : (
-          <ExploreCities onCitySelect={fetchWeather} />
+        )}
+
+        {/* Visualize View — Persistently mounted after first use to avoid Cesium re-init */}
+        <div style={{ display: view === 'visualize' ? 'block' : 'none' }}>
+          {(hasOpenedVisualize && weatherData) && (
+            <VisualizeTab 
+              data={weatherData} 
+              unit={unit} 
+              active={view === 'visualize'}
+              onBack={() => setView('dashboard')} 
+              onSearch={fetchWeather}
+            />
+          )}
+        </div>
+
+        {/* Explore View */}
+        {view === 'explore' && <ExploreCities onCitySelect={fetchWeather} />}
+
+        {/* AQI Leaderboard View */}
+        {view === 'leaderboard' && (
+          <AQILeaderboard 
+            onSetMainCity={handleSetMainCity}
+            onViewOnMap={handleViewOnMap}
+          />
         )}
       </div>
     </div>
