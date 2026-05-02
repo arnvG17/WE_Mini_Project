@@ -162,7 +162,7 @@ function App() {
 
             {!loading && !weatherData && !error && (
               <div className="empty-state">
-                <svg style={{ opacity: 0.15 }} width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3(15.3) 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                 <svg style={{ opacity: 0.15 }} width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
                 <p>Search a city to begin your journey</p>
               </div>
             )}
@@ -171,7 +171,7 @@ function App() {
 
         {/* Visualize View — Persistently mounted after first use to avoid Cesium re-init */}
         <div style={{ display: view === 'visualize' ? 'block' : 'none' }}>
-          {(hasOpenedVisualize && weatherData) && (
+          {hasOpenedVisualize && (
             <VisualizeTab 
               data={weatherData} 
               unit={unit} 

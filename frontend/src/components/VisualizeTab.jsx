@@ -1,20 +1,133 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React from 'react';
 import './VisualizeTab.css';
 
-/**
- * VisualizeTab — 3D Globe Visualization using CesiumJS.
- * Features a split-panel layout: Left info panel + Right globe panel.
- */
+const WORLD_CITIES = [
+  { name: "New York", lat: 40.7128, lon: -74.0060, pop: "mega" },
+  { name: "London", lat: 51.5074, lon: -0.1278, pop: "mega" },
+  { name: "Tokyo", lat: 35.6762, lon: 139.6503, pop: "mega" },
+  { name: "Paris", lat: 48.8566, lon: 2.3522, pop: "mega" },
+  { name: "Mumbai", lat: 19.0760, lon: 72.8777, pop: "mega" },
+  { name: "Dubai", lat: 25.2048, lon: 55.2708, pop: "mega" },
+  { name: "Singapore", lat: 1.3521, lon: 103.8198, pop: "mega" },
+  { name: "Sydney", lat: -33.8688, lon: 151.2093, pop: "mega" },
+  { name: "Cairo", lat: 30.0444, lon: 31.2357, pop: "mega" },
+  { name: "Rio de Janeiro", lat: -22.9068, lon: -43.1729, pop: "mega" },
+  { name: "Los Angeles", lat: 34.0522, lon: -118.2437, pop: "mega" },
+  { name: "Berlin", lat: 52.5200, lon: 13.4050, pop: "mega" },
+  { name: "Moscow", lat: 55.7558, lon: 37.6173, pop: "mega" },
+  { name: "Beijing", lat: 39.9042, lon: 116.4074, pop: "mega" },
+  { name: "Istanbul", lat: 41.0082, lon: 28.9784, pop: "mega" },
+  { name: "Bangkok", lat: 13.7563, lon: 100.5018, pop: "mega" },
+  { name: "Seoul", lat: 37.5665, lon: 126.9780, pop: "mega" },
+  { name: "Mexico City", lat: 19.4326, lon: -99.1332, pop: "mega" },
+  { name: "Toronto", lat: 43.6532, lon: -79.3832, pop: "mega" },
+  { name: "Cape Town", lat: -33.9249, lon: 18.4241, pop: "mega" },
+  { name: "Reykjavik", lat: 64.1466, lon: -21.9426, pop: "standard" },
+  { name: "Anchorage", lat: 61.2181, lon: -149.9003, pop: "standard" },
+  { name: "Perth", lat: -31.9505, lon: 115.8605, pop: "standard" },
+  { name: "Nairobi", lat: -1.2921, lon: 36.8219, pop: "standard" },
+  { name: "Yakutsk", lat: 62.0308, lon: 129.6755, pop: "standard" },
+  { name: "Antarctica (McMurdo)", lat: -77.8419, lon: 166.6863, pop: "standard" },
+  { name: "Honolulu", lat: 21.3069, lon: -157.8583, pop: "standard" },
+  { name: "Casablanca", lat: 33.5731, lon: -7.5898, pop: "standard" },
+  { name: "Lisbon", lat: 38.7223, lon: -9.1393, pop: "standard" },
+  { name: "Oslo", lat: 59.9139, lon: 10.7522, pop: "standard" }
+];
+
+const WEATHER_API_KEY = '0e24a04ab4fe4a7fae195443260205';
+
 const VisualizeTab = ({ data, unit, onBack, onSearch, active }) => {
-  const viewerRef = useRef(null);
-  const containerRef = useRef(null);
-  const [cesiumLoaded, setCesiumLoaded] = useState(false);
-  const [activeTheme, setActiveTheme] = useState('clear');
-  const [showPanel, setShowPanel] = useState(false);
-  const prevCityRef = useRef(data?.location?.name || null);
+  const viewerRef = React.useRef(null);
+  const containerRef = React.useRef(null);
+  const tooltipRef = React.useRef(null);
+  const [cesiumLoaded, setCesiumLoaded] = React.useState(false);
+  const [activeTheme, setActiveTheme] = React.useState('clear');
+  const [showPanel, setShowPanel] = React.useState(false);
+  const prevCityRef = React.useRef(data?.location?.name || null);
+
+  // Weather color mapping
+  const getWeatherLabelColor = React.useCallback((conditionText) => {
+    const Cesium = window.Cesium;
+    const c = conditionText.toLowerCase();
+
+    if (c.includes("thunder") || c.includes("storm"))
+      return Cesium.Color.fromCssColorString('#9B59B6'); // purple
+
+    if (c.includes("snow") || c.includes("blizzard") ||
+        c.includes("ice") || c.includes("sleet") || c.includes("freeze"))
+      return Cesium.Color.fromCssColorString('#AED6F1'); // icy blue
+
+    if (c.includes("rain") || c.includes("drizzle") ||
+        c.includes("shower") || c.includes("downpour"))
+      return Cesium.Color.fromCssColorString('#5DADE2'); // rain blue
+
+    if (c.includes("fog") || c.includes("mist") ||
+        c.includes("haze") || c.includes("smoke"))
+      return Cesium.Color.fromCssColorString('#D5D8DC'); // pale grey
+
+    if (c.includes("dust") || c.includes("sand") ||
+        c.includes("wind"))
+      return Cesium.Color.fromCssColorString('#E59866'); // sandy orange
+
+    if (c.includes("overcast") || c.includes("cloud"))
+      return Cesium.Color.fromCssColorString('#BDC3C7'); // grey
+
+    if (c.includes("partly") || c.includes("scattered") ||
+        c.includes("broken"))
+      return Cesium.Color.fromCssColorString('#58D68D'); // soft green
+
+    if (c.includes("sunny") || c.includes("clear") ||
+        c.includes("fair") || c.includes("bright"))
+      return Cesium.Color.fromCssColorString('#FFD700'); // golden yellow
+
+    return Cesium.Color.WHITE; 
+  }, []);
+
+  const updateGlobeLabelColors = React.useCallback(() => {
+    if (!viewerRef.current) return;
+    const viewer = viewerRef.current;
+    const Cesium = window.Cesium;
+
+    viewer.entities.suspendEvents();
+    viewer.entities.values.forEach(entity => {
+      if (entity._cityIndex === undefined) return;
+      const city = WORLD_CITIES[entity._cityIndex];
+      if (!city || !city.condition) return;
+
+      const color = getWeatherLabelColor(city.condition);
+      if (entity.label) entity.label.fillColor = new Cesium.ConstantProperty(color);
+      if (entity.point) entity.point.color = new Cesium.ConstantProperty(color);
+    });
+    viewer.entities.resumeEvents();
+  }, [getWeatherLabelColor]);
+
+  const fetchAllCityWeather = React.useCallback(async () => {
+    try {
+      const results = await Promise.allSettled(
+        WORLD_CITIES.map(city =>
+          fetch(
+            `https://api.weatherapi.com/v1/current.json?key=${WEATHER_API_KEY}&q=${city.lat},${city.lon}&aqi=no`
+          ).then(r => r.json())
+        )
+      );
+
+      results.forEach((result, i) => {
+        if (result.status === 'fulfilled') {
+          const condition = result.value?.current?.condition?.text || 'Clear';
+          const temp = result.value?.current?.temp_c;
+          WORLD_CITIES[i].condition = condition;
+          WORLD_CITIES[i].temp = temp;
+        }
+      });
+
+      updateGlobeLabelColors();
+    } catch (err) {
+      console.error("Global weather fetch failed", err);
+    }
+  }, [updateGlobeLabelColors]);
 
   // Map condition to theme
-  const getThemeFromCondition = useCallback((condition) => {
+  const getThemeFromCondition = React.useCallback((condition) => {
     const text = condition.toLowerCase();
     if (text.includes('sunny') || text.includes('clear')) return 'clear';
     if (text.includes('rain') || text.includes('drizzle') || text.includes('shower')) return 'rain';
@@ -26,7 +139,7 @@ const VisualizeTab = ({ data, unit, onBack, onSearch, active }) => {
   }, []);
 
   // Apply atmosphere tint
-  const applyGlobeTheme = useCallback((theme) => {
+  const applyGlobeTheme = React.useCallback((theme) => {
     if (!viewerRef.current) return;
     const scene = viewerRef.current.scene;
     const atmosphere = scene.skyAtmosphere;
@@ -70,7 +183,7 @@ const VisualizeTab = ({ data, unit, onBack, onSearch, active }) => {
   }, []);
 
   // Lazy load Cesium (Using 1.110 for better stability)
-  useEffect(() => {
+  React.useEffect(() => {
     if (window.Cesium) {
       setCesiumLoaded(true);
       return;
@@ -89,7 +202,7 @@ const VisualizeTab = ({ data, unit, onBack, onSearch, active }) => {
   }, []);
 
   // Initialize Viewer (Persistent - Only run once after Cesium loads)
-  useEffect(() => {
+  React.useEffect(() => {
     if (!cesiumLoaded || (viewerRef.current && !viewerRef.current.isDestroyed())) return;
 
     const Cesium = window.Cesium;
@@ -108,7 +221,6 @@ const VisualizeTab = ({ data, unit, onBack, onSearch, active }) => {
       navigationHelpButton: false,
       navigationInstructionsInitiallyVisible: false,
       enableLighting: true,
-      // Using Ion imagery with LABELS is best for seeing city names
       baseLayer: Cesium.ImageryLayer.fromWorldImagery({
         style: Cesium.IonWorldImageryStyle.BING_MAPS_AERIAL_WITH_LABELS
       })
@@ -121,9 +233,64 @@ const VisualizeTab = ({ data, unit, onBack, onSearch, active }) => {
       }
     }, 1000);
 
-    // Handle Clicks
+    // Create persistent city labels
+    WORLD_CITIES.forEach((city, index) => {
+      const entity = viewer.entities.add({
+        position: Cesium.Cartesian3.fromDegrees(city.lon, city.lat, 0),
+        label: {
+          text: city.name,
+          fillColor: Cesium.Color.WHITE,
+          outlineColor: Cesium.Color.BLACK,
+          outlineWidth: 2,
+          style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+          font: city.pop === "mega" ? "bold 14px sans-serif" : "12px sans-serif",
+          verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+          pixelOffset: new Cesium.Cartesian2(0, -12),
+          disableDepthTestDistance: Number.POSITIVE_INFINITY,
+          translucencyByDistance: new Cesium.NearFarScalar(1.5e6, 1.0, 8.0e6, 0.0),
+          scaleByDistance: new Cesium.NearFarScalar(1.5e6, 1.2, 6.0e6, 0.6)
+        },
+        point: {
+          pixelSize: city.pop === "mega" ? 7 : 5,
+          color: Cesium.Color.WHITE,
+          outlineColor: Cesium.Color.BLACK,
+          outlineWidth: 1,
+          disableDepthTestDistance: Number.POSITIVE_INFINITY
+        }
+      });
+      entity._cityIndex = index;
+    });
+
+    // Handle Hover Tooltip
+    const tooltip = tooltipRef.current;
     const handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
+    
+    handler.setInputAction((move) => {
+      const picked = viewer.scene.pick(move.endPosition);
+      if (Cesium.defined(picked) && picked.id?._cityIndex !== undefined) {
+        const city = WORLD_CITIES[picked.id._cityIndex];
+        tooltip.style.display = 'block';
+        tooltip.style.left = (move.endPosition.x + 14) + 'px';
+        tooltip.style.top = (move.endPosition.y - 10) + 'px';
+        tooltip.innerHTML = `
+          <div class="tooltip-name">${city.name}</div>
+          <div class="tooltip-cond">${city.condition || 'Loading...'}</div>
+          <div class="tooltip-temp">${city.temp !== undefined ? city.temp + '°C' : ''}</div>
+        `;
+      } else {
+        tooltip.style.display = 'none';
+      }
+    }, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
+
+    // Handle Clicks
     handler.setInputAction((click) => {
+      const picked = viewer.scene.pick(click.position);
+      if (Cesium.defined(picked) && picked.id?._cityIndex !== undefined) {
+        const city = WORLD_CITIES[picked.id._cityIndex];
+        if (onSearch) onSearch(`${city.lat},${city.lon}`);
+        return;
+      }
+
       const cartesian = viewer.camera.pickEllipsoid(click.position, viewer.scene.globe.ellipsoid);
       if (cartesian) {
         const cartographic = Cesium.Cartographic.fromCartesian(cartesian);
@@ -134,20 +301,25 @@ const VisualizeTab = ({ data, unit, onBack, onSearch, active }) => {
     }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
 
     viewerRef.current = viewer;
+    fetchAllCityWeather();
+
+    // Auto-refresh every 30 mins
+    const interval = setInterval(fetchAllCityWeather, 30 * 60 * 1000);
     
     setTimeout(() => viewer.forceResize(), 100);
 
     return () => {
       handler.destroy();
+      clearInterval(interval);
       if (viewerRef.current && !viewerRef.current.isDestroyed()) {
         viewerRef.current.destroy();
         viewerRef.current = null;
       }
     };
-  }, [cesiumLoaded, onSearch]);
+  }, [cesiumLoaded, onSearch, fetchAllCityWeather]);
 
   // Handle Rotation
-  useEffect(() => {
+  React.useEffect(() => {
     if (!viewerRef.current) return;
     const viewer = viewerRef.current;
     const Cesium = window.Cesium;
@@ -164,7 +336,7 @@ const VisualizeTab = ({ data, unit, onBack, onSearch, active }) => {
   }, [showPanel]);
 
   // Handle Visibility Change
-  useEffect(() => {
+  React.useEffect(() => {
     if (viewerRef.current && active) {
       viewerRef.current.forceResize();
       if (data && showPanel) {
@@ -177,11 +349,10 @@ const VisualizeTab = ({ data, unit, onBack, onSearch, active }) => {
     }
   }, [active, data, showPanel]);
 
-  // Handle City Update
-  useEffect(() => {
+  // Handle City Update (for the search/dashboard selection)
+  React.useEffect(() => {
     if (!viewerRef.current || !data) return;
 
-    // Detect if this is a new city selection
     if (prevCityRef.current !== data.location.name) {
       setShowPanel(true);
       prevCityRef.current = data.location.name;
@@ -192,10 +363,13 @@ const VisualizeTab = ({ data, unit, onBack, onSearch, active }) => {
     const lat = data.location.lat;
     const lon = data.location.lon;
 
-    viewer.entities.removeAll();
+    // Filter out user-selected marker if it already exists
+    const existing = viewer.entities.getById('selection-marker');
+    if (existing) viewer.entities.remove(existing);
 
     const pinBuilder = new Cesium.PinBuilder();
     viewer.entities.add({
+      id: 'selection-marker',
       name: data.location.name,
       position: Cesium.Cartesian3.fromDegrees(lon, lat),
       billboard: {
@@ -220,6 +394,8 @@ const VisualizeTab = ({ data, unit, onBack, onSearch, active }) => {
 
   return (
     <div className={`visualize-container theme-${activeTheme}`}>
+      <div id="globe-tooltip" ref={tooltipRef}></div>
+
       {/* Left Panel - Only shown after a selection */}
       {showPanel && data && (
         <div className="info-panel">
@@ -306,7 +482,8 @@ const VisualizeTab = ({ data, unit, onBack, onSearch, active }) => {
                 className="back-btn" 
                 onClick={() => {
                   setShowPanel(false);
-                  if (viewerRef.current) viewerRef.current.entities.removeAll();
+                  const existing = viewerRef.current?.entities.getById('selection-marker');
+                  if (existing) viewerRef.current.entities.remove(existing);
                   prevCityRef.current = null;
                 }}
                 style={{ flex: 1, margin: 0, background: 'rgba(255,255,255,0.1)' }}
@@ -326,6 +503,12 @@ const VisualizeTab = ({ data, unit, onBack, onSearch, active }) => {
 
       {/* Globe Panel */}
       <div className="globe-panel" style={{ width: showPanel ? '65%' : '100%' }}>
+        {!cesiumLoaded && (
+          <div className="globe-loading">
+            <div className="spinner"></div>
+            <p>Initializing 3D Atmosphere...</p>
+          </div>
+        )}
         <div ref={containerRef} className="cesium-container" />
         
         {/* Zoom Controls */}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import axios from 'axios';
 import './AQILeaderboard.css';
 
@@ -10,6 +10,7 @@ const CACHE_KEY = 'weathervue_aqi_cache_waqi';
 const CITIES_KEY = 'weathervue_aqi_cities_waqi';
 const REFRESH_INTERVAL = 60 * 60 * 1000;
 const CACHE_EXPIRY = 10 * 60 * 1000;
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 const DEFAULT_CITIES = [
   'Delhi', 'Mumbai', 'Beijing', 'Shanghai', 'Lahore', 'Dhaka',
