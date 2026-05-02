@@ -103,7 +103,7 @@ function App() {
             <button className={view === 'dashboard' ? 'active' : ''} onClick={() => setView('dashboard')}>Dashboard</button>
             <button className={view === 'explore' ? 'active' : ''} onClick={() => setView('explore')}>Explore</button>
           </div>
-          <h1>WeatherVue</h1>
+          <h1>{view === 'dashboard' && weatherData ? weatherData.location.name : 'WeatherVue'}</h1>
         </header>
 
         <SearchBar onSearch={fetchWeather} onGeolocate={handleGeolocate} loading={loading} />

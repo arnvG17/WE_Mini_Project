@@ -104,59 +104,39 @@ export default function WeatherDashboard({ data, unit }) {
             ))}
           </div>
         </div>
-
-        {/* 4. Hourly Forecast */}
-        <div className="section-card glass-card">
-          <h3 className="section-title">Next 12 Hours</h3>
-          <div className="hourly-list">
-            {hourly.slice(0, 12).map(h => (
-              <div key={h.time} className="hour-row">
-                <span className="hour-time">{h.time}</span>
-                <span className="hour-temp">{fmt(h.temp_c, h.temp_f)}</span>
-                <div className="hour-cond">
-                  <img src={`https:${h.condition.icon}`} alt={h.condition.text} />
-                  <span>{h.condition.text}</span>
-                </div>
-                <span className="hour-rain">{h.chance_of_rain > 0 ? `💧 ${h.chance_of_rain}%` : '--'}</span>
-              </div>
-            ))}
-          </div>
-        </div>
       </div>
 
       {/* --- Sidebar --- */}
       <div className="dashboard-sidebar">
         
-        {/* AQI Card */}
+        {/* AQI Card (Top Priority) */}
         {current.air_quality && (
-          <div className="side-card glass-card">
-            <h3 className="side-title">Air Quality Index</h3>
-            <div className="aqi-score-container">
-              <div className="aqi-circle" style={{ '--percent': `${Math.min((current.air_quality.score / 500) * 100, 100)}%` }}>
-                <span className="aqi-value">{current.air_quality.score}</span>
-              </div>
-              <div className="aqi-text">
-                <span className="aqi-status">{current.air_quality.label}</span>
-                <span className="aqi-desc">PM2.5: {current.air_quality.pm2_5.toFixed(1)}</span>
-              </div>
-            </div>
-            
-            <div className="pollutants-list">
-              <div className="pollutant-item">
-                <span className="p-label">PM10</span>
-                <span className="p-value">{current.air_quality.pm10.toFixed(1)}</span>
-              </div>
-              <div className="pollutant-item">
-                <span className="p-label">O3 (Ozone)</span>
-                <span className="p-value">{current.air_quality.o3.toFixed(1)}</span>
-              </div>
-              <div className="pollutant-item">
-                <span className="p-label">NO2</span>
-                <span className="p-value">{current.air_quality.no2.toFixed(1)}</span>
+          <div className={`side-card glass-card aqi-hero-card aqi-status-${current.air_quality.epa_index}`}>
+            <h3 className="side-title">Air Quality</h3>
+            <div className="aqi-hero-content">
+              <span className="aqi-hero-value">{current.air_quality.score}</span>
+              <div className="aqi-hero-meta">
+                <span className="aqi-hero-status">{current.air_quality.label}</span>
+                <span className="aqi-hero-desc">US-EPA INDEX: {current.air_quality.epa_index}</span>
               </div>
             </div>
           </div>
         )}
+
+        {/* 4. Hourly Forecast */}
+        <div className="side-card glass-card">
+          <h3 className="side-title">Next 12 Hours</h3>
+          <div className="hourly-mini-list">
+            {hourly.slice(0, 12).map(h => (
+              <div key={h.time} className="hourly-mini-item">
+                <span className="h-time">{h.time}</span>
+                <img src={`https:${h.condition.icon}`} alt={h.condition.text} />
+                <span className="h-temp">{fmt(h.temp_c, h.temp_f)}</span>
+                <span className="h-rain">{h.chance_of_rain > 0 ? `${h.chance_of_rain}%` : ''}</span>
+              </div>
+            ))}
+          </div>
+        </div>
 
         {/* 7-Day Forecast */}
         <div className="side-card glass-card">
