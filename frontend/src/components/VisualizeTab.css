@@ -310,6 +310,40 @@
   min-width: 120px;
 }
 
+/* Cesium Toolbar Customization */
+.cesium-viewer-toolbar {
+  top: 30px !important;
+  right: 30px !important;
+}
+
+.cesium-button {
+  background: rgba(0, 0, 0, 0.8) !important;
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 12px !important;
+  fill: #fff !important;
+  transition: 0.3s !important;
+}
+
+.cesium-button:hover {
+  background: #fff !important;
+  fill: #000 !important;
+}
+
+.cesium-baseLayerPicker-dropDown {
+  background: rgba(0, 0, 0, 0.9) !important;
+  backdrop-filter: blur(30px);
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 20px !important;
+  bottom: auto !important;
+  top: 45px !important;
+  padding: 15px !important;
+}
+
+.cesium-baseLayerPicker-item-label {
+  color: #fff !important;
+}
+
 .tooltip-name {
   font-weight: 700;
   font-family: 'Boska', serif;
