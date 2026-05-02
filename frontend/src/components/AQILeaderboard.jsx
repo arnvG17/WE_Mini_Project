@@ -4,17 +4,17 @@ import './AQILeaderboard.css';
 
 // 1. GET A TOKEN AT: https://aqicn.org/data-platform/token/
 // 2. PASTE IT HERE:
-const AQI_TOKEN = 'b2be81867647504055330f6a8abaa42df542cb3b'; 
-
-const CACHE_KEY = 'weathervue_aqi_cache_waqi';
-const CITIES_KEY = 'weathervue_aqi_cities_waqi';
+const CACHE_KEY = 'weathervue_aqi_cache_weatherapi';
+const CITIES_KEY = 'weathervue_aqi_cities_weatherapi';
 const REFRESH_INTERVAL = 60 * 60 * 1000;
 const CACHE_EXPIRY = 10 * 60 * 1000;
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 const DEFAULT_CITIES = [
-  'Delhi', 'Mumbai', 'Beijing', 'Shanghai', 'Lahore', 'Dhaka',
-  'London', 'Paris', 'New York', 'Tokyo', 'Sydney', 'Singapore'
+  'Mumbai', 'Delhi', 'Bangalore', 'Chennai', 'Kolkata', 'Hyderabad',
+  'Pune', 'Ahmedabad', 'Jaipur', 'Lucknow', 'London', 'New York',
+  'Tokyo', 'Paris', 'Dubai', 'Singapore', 'Sydney', 'Berlin',
+  'Toronto', 'Reykjavik', 'Oslo', 'Moscow', 'Beijing', 'Cairo'
 ];
 
 const CATEGORIES = [
@@ -77,7 +77,6 @@ const AQILeaderboard = ({ onSetMainCity, onViewOnMap }) => {
   }, []);
 
   const fetchAllAQI = useCallback(async (force = false) => {
-    // ... (rest of fetchAllAQI)
     if (!force) {
       const cached = localStorage.getItem(CACHE_KEY);
       if (cached) {
@@ -92,9 +91,9 @@ const AQILeaderboard = ({ onSetMainCity, onViewOnMap }) => {
 
     setLoading(true);
     try {
-      // Fetch from waqi.info directly as requested
+      // Use our own backend which provides clean city-level data from WeatherAPI
       const promises = cities.map(city => 
-        axios.get(`https://api.waqi.info/feed/${encodeURIComponent(city)}/?token=${AQI_TOKEN}`)
+        axios.get(`${API_BASE}/dashboard/${encodeURIComponent(city)}`)
           .then(res => ({ searchName: city, ...res.data }))
           .catch(() => ({ searchName: city, status: 'error' }))
       );
@@ -102,26 +101,26 @@ const AQILeaderboard = ({ onSetMainCity, onViewOnMap }) => {
       const results = await Promise.all(promises);
       
       const processed = results.map(res => {
-        if (res.status !== 'ok' || !res.data) {
+        if (!res.current || !res.current.air_quality) {
           return { searchName: res.searchName, name: res.searchName, aqi: null, status: 'error' };
         }
         
-        const d = res.data;
+        const aq = res.current.air_quality;
         return {
           searchName: res.searchName,
-          name: d.city.name,
-          aqi: parseInt(d.aqi),
-          dominantPollutant: d.dominentpol,
+          name: res.location.name,
+          aqi: aq.score,
+          dominantPollutant: 'PM2.5', // WeatherAPI is PM2.5 focused
           pollutants: {
-            pm25: d.iaqi?.pm25?.v,
-            pm10: d.iaqi?.pm10?.v,
-            no2: d.iaqi?.no2?.v,
-            o3: d.iaqi?.o3?.v,
-            co: d.iaqi?.co?.v,
-            so2: d.iaqi?.so2?.v
+            pm25: aq.pm2_5,
+            pm10: aq.pm10,
+            no2: aq.no2,
+            o3: aq.o3,
+            co: aq.co || 0,
+            so2: aq.so2 || 0
           },
-          geo: d.city.geo,
-          lastUpdate: d.time.s,
+          geo: [res.location.lat, res.location.lon],
+          lastUpdate: res.location.localtime,
           status: 'ok'
         };
       });
@@ -159,17 +158,18 @@ const AQILeaderboard = ({ onSetMainCity, onViewOnMap }) => {
     setLoading(true);
     setAddError('');
     try {
-      const res = await axios.get(`https://api.waqi.info/feed/${encodeURIComponent(newCity)}/?token=${AQI_TOKEN}`);
-      if (res.data.status === 'ok') {
-        if (!cities.includes(newCity)) {
-          setCities(prev => [...prev, newCity]);
+      const res = await axios.get(`${API_BASE}/dashboard/${encodeURIComponent(newCity)}`);
+      if (res.data && res.data.location) {
+        const cityName = res.data.location.name;
+        if (!cities.includes(cityName)) {
+          setCities(prev => [...prev, cityName]);
           setNewCity('');
           fetchAllAQI(true);
         } else {
           setAddError('City already in list');
         }
       } else {
-        setAddError('Station not found');
+        setAddError('City not found');
       }
     } catch (err) {
       setAddError('Request failed');
@@ -183,53 +183,8 @@ const AQILeaderboard = ({ onSetMainCity, onViewOnMap }) => {
     setAqiData(prev => prev.filter(d => d.searchName !== searchName));
   };
 
-  const summary = useMemo(() => {
-    const validData = aqiData.filter(d => d.status === 'ok' && !isNaN(d.aqi));
-    if (validData.length === 0) return null;
-
-    const sorted = [...validData].sort((a, b) => a.aqi - b.aqi);
-    const avg = Math.round(validData.reduce((acc, curr) => acc + curr.aqi, 0) / validData.length);
-    const unhealthyCount = validData.filter(d => d.aqi > 100).length;
-
-    return {
-      cleanest: sorted[0],
-      mostPolluted: sorted[sorted.length - 1],
-      average: avg,
-      unhealthyCount
-    };
-  }, [aqiData]);
-
-  const getTimeAgo = (timestamp) => {
-    if (!timestamp) return '';
-    // WAQI time is often a string like "2024-05-02 17:00:00"
-    return 'Real-time';
-  };
-
   return (
     <div className="aqi-leaderboard animate-fade-in">
-      <div className="aqi-summary-bar">
-        {summary && (
-          <div className="summary-grid">
-            <div className="summary-item">
-              <span className="label">Cleanest</span>
-              <span className="value success">{summary.cleanest.name.split(',')[0]}</span>
-            </div>
-            <div className="summary-item">
-              <span className="label">Most Polluted</span>
-              <span className="value danger">{summary.mostPolluted.name.split(',')[0]}</span>
-            </div>
-            <div className="summary-item">
-              <span className="label">Avg AQI</span>
-              <span className="value">{summary.average}</span>
-            </div>
-            <div className="summary-item">
-              <span className="label">Unhealthy</span>
-              <span className="value warning">{summary.unhealthyCount}</span>
-            </div>
-          </div>
-        )}
-      </div>
-
       <div className="aqi-table-container">
         <table className="aqi-table">
           <thead>
@@ -350,7 +305,6 @@ const AQILeaderboard = ({ onSetMainCity, onViewOnMap }) => {
                       const cityName = `${item.name}, ${item.country}`;
                       setNewCity(cityName);
                       setShowDropdown(false);
-                      // Trigger add automatically
                       if (!cities.includes(cityName)) {
                         setCities(prev => [...prev, cityName]);
                         setNewCity('');
